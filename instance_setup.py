@@ -143,6 +143,9 @@ def retrieve_instance_ip(instance_ids):
 def start_instance():
     """Starts master and slave instances, with the lab3 configuration.
     """
+    # Create the standalone instance with the key pair
+    standalone = create_ec2('t2.micro', sg_id, key_name, "standalone")
+
     # Create the master instance with the key pair
     master = create_ec2('t2.micro', sg_id, key_name, "master")
 
@@ -150,6 +153,9 @@ def start_instance():
     slave = []
     for i in range(NUM_SLAVES):
         slave.append(create_ec2('t2.micro', sg_id, key_name, "slave "+str(i)))
+
+    print(f'Waiting for standalone {standalone.id} to be running...')
+    standalone.wait_until_running()
 
     print(f'Waiting for master {master.id} to be running...')
     master.wait_until_running()
@@ -159,10 +165,14 @@ def start_instance():
         slave[i].wait_until_running()
 
     # Get the instance's IP
-    instance_ips = retrieve_instance_ip([master.id, slave[0].id, slave[1].id, slave[2].id])
+    instance_ips = retrieve_instance_ip([standalone.id, master.id, slave[0].id, slave[1].id, slave[2].id])
 
     with open('env_variables.txt', 'w+') as f:
-        f.write(f'INSTANCE_IP={instance_ips}\n')
+        f.write(f'STANDALONE_IP={instance_ips[0]}\n')
+        f.write(f'MASTER_IP={instance_ips[1]}\n')
+        f.write(f'SLAVE0_IP={instance_ips[2]}\n')
+        f.write(f'SLAVE1_IP={instance_ips[3]}\n')
+        f.write(f'SLAVE2_IP={instance_ips[4]}\n')
         f.write(f'PRIVATE_KEY_FILE={private_key_filename}\n')
     print('Wrote instance\'s IP and private key filename to env_variables.txt')
     print(f'Master {master.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ips[0]}\'')
