@@ -146,7 +146,7 @@ def start_instance():
     master = create_ec2('t2.micro', sg_id, key_name, "master")
     slave = []
     for i in range(3):
-        slave[i] = create_ec2('t2.micro', sg_id, key_name, "master"+i)
+        slave.append(create_ec2('t2.micro', sg_id, key_name, "slave "+str(i)))
 
     print(f'Waiting for master {master.id} to be running...')
     master.wait_until_running()
