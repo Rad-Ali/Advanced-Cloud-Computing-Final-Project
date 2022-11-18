@@ -10,12 +10,13 @@ args = parser.parse_args()
 EC2_RESOURCE = boto3.resource('ec2')
 EC2_CLIENT = boto3.client('ec2')
 
+NUM_SLAVES = 3
 
 def create_ec2(instance_type, sg_id, key_name, instance_name):
     """Creates an EC2 instance
 
     Args:
-        instance_type (str): Instance type (m4.large, ...)
+        instance_type (str): Instance type (t2.micro, ...)
         sg_id (str): Security group ID
         key_name (str): SSH key name
         instrance_name (str) : instance name
@@ -140,18 +141,20 @@ def retrieve_instance_ip(instance_ids):
 
 
 def start_instance():
-    """Starts master instance, with the lab3 configuration.
+    """Starts master and slave instances, with the lab3 configuration.
     """
-    # Create the instance with the key pair
+    # Create the master instance with the key pair
     master = create_ec2('t2.micro', sg_id, key_name, "master")
+
+    # Create the slave instances with the key pair
     slave = []
-    for i in range(3):
+    for i in range(NUM_SLAVES):
         slave.append(create_ec2('t2.micro', sg_id, key_name, "slave "+str(i)))
 
     print(f'Waiting for master {master.id} to be running...')
     master.wait_until_running()
 
-    for i in range(3):
+    for i in range(NUM_SLAVES):
         print(f'Waiting for slave {i} {slave[i].id} to be running...')
         slave[i].wait_until_running()
 
@@ -163,7 +166,7 @@ def start_instance():
         f.write(f'PRIVATE_KEY_FILE={private_key_filename}\n')
     print('Wrote instance\'s IP and private key filename to env_variables.txt')
     print(f'Master {master.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ips[0]}\'')
-    for i in range(3):
+    for i in range(NUM_SLAVES):
         print(f'Slave {i} - {master.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ips[i+1]}\'')
 
 
