@@ -131,10 +131,10 @@ def retrieve_instance_ip(instance_ids):
         str: Instance's public IP
     """
     print(f'Retrieving instance {instance_ids} public IP...')
-    instance_config = EC2_CLIENT.describe_instances(InstanceIds=[instance_ids])
     instance_ips = []
-    for i in range(4):
-        instance_ips[i] = instance_config["Reservations"][0]['Instances'][i]['PublicIpAddress']
+    for id in instance_ids:
+        instance_config = EC2_CLIENT.describe_instances(InstanceIds=[id])
+        instance_ips.append(instance_config["Reservations"][0]['Instances'][0]['PublicIpAddress'])
     print(f'Public IP : {instance_ips}')
     return instance_ips
 
@@ -164,7 +164,7 @@ def start_instance():
     print('Wrote instance\'s IP and private key filename to env_variables.txt')
     print(f'Master {master.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ips[0]}\'')
     for i in range(3):
-        print(f'Master {master.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ips[i+1]}\'')
+        print(f'Slave {i} - {master.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ips[i+1]}\'')
 
 
 def terminate_all_running_instances():
