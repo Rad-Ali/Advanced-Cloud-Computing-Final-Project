@@ -66,6 +66,10 @@ def create_security_group():
             {'IpProtocol': 'tcp',
              'FromPort': 22,
              'ToPort': 22,
+             'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
+             {'IpProtocol': 'tcp',
+             'FromPort': 1186,
+             'ToPort': 1186,
              'IpRanges': [{'CidrIp': '0.0.0.0/0'}]}
         ]
         data = EC2_CLIENT.authorize_security_group_ingress(GroupId=security_group_id,
@@ -122,7 +126,7 @@ def create_key_pair(key_name, private_key_filename):
     print(f'{private_key_filename} written.')
 
 
-def retrieve_instance_ip(instance_ids):
+def retrieve_public_ip(instance_ids):
     """Retrieves an instance's public IP
 
     Args:
@@ -132,13 +136,27 @@ def retrieve_instance_ip(instance_ids):
         str: Instance's public IP
     """
     print(f'Retrieving instance {instance_ids} public IP...')
+
     instance_ips = []
     for id in instance_ids:
         instance_config = EC2_CLIENT.describe_instances(InstanceIds=[id])
         instance_ips.append(instance_config["Reservations"][0]['Instances'][0]['PublicIpAddress'])
-    print(f'Public IP : {instance_ips}')
     return instance_ips
 
+def retrieve_private_dns(instance_ids):
+    """Retrieves instances' private DNS
+
+    Args:
+        instance_id (str): instance id
+
+    Returns:
+        str: Instance's private DNS
+    """
+    instance_dns = []
+    for id in instance_ids:
+        instance_config = EC2_CLIENT.describe_instances(InstanceIds=[id])
+        instance_dns.append(instance_config["Reservations"][0]['Instances'][0]['PrivateDnsName'])
+    return instance_dns
 
 def start_instance():
     """Starts master and slave instances, with the lab3 configuration.
@@ -165,7 +183,8 @@ def start_instance():
         slave[i].wait_until_running()
 
     # Get the instance's IP
-    instance_ips = retrieve_instance_ip([standalone.id, master.id, slave[0].id, slave[1].id, slave[2].id])
+    instance_ips = retrieve_public_ip([standalone.id, master.id, slave[0].id, slave[1].id, slave[2].id])
+    intances_dns = retrieve_private_dns([master.id, slave[0].id, slave[1].id, slave[2].id])
 
     with open('env_variables.txt', 'w+') as f:
         f.write(f'STANDALONE_IP={instance_ips[0]}\n')
@@ -173,11 +192,16 @@ def start_instance():
         f.write(f'SLAVE0_IP={instance_ips[2]}\n')
         f.write(f'SLAVE1_IP={instance_ips[3]}\n')
         f.write(f'SLAVE2_IP={instance_ips[4]}\n')
+        f.write(f'MASTER_DNS={intances_dns[0]}\n')
+        f.write(f'SLAVE0_DNS={intances_dns[1]}\n')
+        f.write(f'SLAVE1_DNS={intances_dns[2]}\n')
+        f.write(f'SLAVE2_DNS={intances_dns[3]}\n')
         f.write(f'PRIVATE_KEY_FILE={private_key_filename}\n')
     print('Wrote instance\'s IP and private key filename to env_variables.txt')
-    print(f'Master {master.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ips[0]}\'')
+    print(f'Standalone {standalone.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ips[0]}\'')
+    print(f'Master {master.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ips[1]}\'')
     for i in range(NUM_SLAVES):
-        print(f'Slave {i} - {master.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ips[i+1]}\'')
+        print(f'Slave {i} - {master.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ips[i+2]}\'')
 
 
 def terminate_all_running_instances():
