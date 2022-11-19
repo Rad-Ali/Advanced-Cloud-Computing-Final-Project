@@ -61,7 +61,7 @@ echo "export MYSQLC_HOME=/opt/mysqlcluster/home/mysqlc
 export PATH=$MYSQLC_HOME/bin:$PATH" > mysqlc.sh
 sudo mv mysqlc.sh /etc/profile.d/mysqlc.sh
 source /etc/profile.d/mysqlc.sh
-sudo apt-get -q update -y && sudo apt-get -q install -y libncurses5
+sudo apt-get -qq update -y && sudo apt-get -qq install -y libncurses5
 sudo mkdir -p /opt/mysqlcluster/deploy
 cd /opt/mysqlcluster/deploy
 sudo mkdir conf
@@ -118,9 +118,9 @@ for ip in ${slaves[@]}; do
         export PATH=$MYSQLC_HOME/bin:$PATH" > mysqlc.sh
         sudo mv mysqlc.sh /etc/profile.d/mysqlc.sh
         source /etc/profile.d/mysqlc.sh
-        sudo apt-get -q update && sudo apt-get -q install -y libncurses5
+        sudo apt-get -qq update && sudo apt-get -qq install -y libncurses5
         sudo mkdir -p /opt/mysqlcluster/deploy/ndb_data
-        ndbd -c "$MASTER_DNS"
+        sudo /opt/mysqlcluster/home/mysqlc/bin/ndbd -c "$MASTER_DNS"
 HERE
 done
 
