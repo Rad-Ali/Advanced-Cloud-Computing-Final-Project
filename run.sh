@@ -99,7 +99,7 @@ nodeid=5
 nodeid=50" > config.ini
 sudo mv config.ini /opt/mysqlcluster/deploy/conf/config.ini
 cd /opt/mysqlcluster/home/mysqlc
-sudo scripts/mysql_install_db
+sudo scripts/mysql_install_db --no-defaults --datadir=/opt/mysqlcluster/deploy/mysqld_data
 sudo /opt/mysqlcluster/home/mysqlc/bin/ndb_mgmd -f /opt/mysqlcluster/deploy/conf/config.ini --initial --configdir=/opt/mysqlcluster/deploy/conf/
 HERE
 
@@ -124,3 +124,5 @@ for ip in ${slaves[@]}; do
 HERE
 done
 
+# sudo /opt/mysqlcluster/home/mysqlc/bin/ndb_mgm -e show
+# sudo /opt/mysqlcluster/home/mysqlc/bin/mysqld --defaults-file=/opt/mysqlcluster/deploy/conf/my.cnf --user=root
