@@ -58,7 +58,7 @@ sudo tar xf mysql-cluster-gpl-7.2.1-linux2.6-x86_64.tar.gz
 sudo ln -s mysql-cluster-gpl-7.2.1-linux2.6-x86_64 mysqlc
 cd ~
 echo "export MYSQLC_HOME=/opt/mysqlcluster/home/mysqlc
-export PATH=$MYSQLC_HOME/bin:$PATH" > mysqlc.sh
+export PATH=/opt/mysqlcluster/home/mysqlc/bin:\$PATH" > mysqlc.sh
 sudo mv mysqlc.sh /etc/profile.d/mysqlc.sh
 source /etc/profile.d/mysqlc.sh
 sudo apt-get -qq update -y && sudo apt-get -qq install -y libncurses5
@@ -115,7 +115,7 @@ for ip in ${slaves[@]}; do
         sudo ln -s mysql-cluster-gpl-7.2.1-linux2.6-x86_64 mysqlc
         cd ~
         echo "export MYSQLC_HOME=/opt/mysqlcluster/home/mysqlc
-        export PATH=$MYSQLC_HOME/bin:$PATH" > mysqlc.sh
+        export PATH=/opt/mysqlcluster/home/mysqlc/bin:\$PATH" > mysqlc.sh
         sudo mv mysqlc.sh /etc/profile.d/mysqlc.sh
         source /etc/profile.d/mysqlc.sh
         sudo apt-get -qq update && sudo apt-get -qq install -y libncurses5
@@ -124,5 +124,45 @@ for ip in ${slaves[@]}; do
 HERE
 done
 
+ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$STANDALONE_IP" << HERE
+    set -x 
+    sudo apt-get -qq update -y && sudo apt-get -qq install -y mysql-server
+    wget -q https://downloads.mysql.com/docs/sakila-db.tar.gz
+    tar -xzf sakila-db.tar.gz
+    sudo /opt/mysqlcluster/home/mysqlc/bin/mysql -e "SOURCE /home/ubuntu/sakila-db/sakila-schema.sql;SOURCE /home/ubuntu/sakila-db/sakila-data.sql;USE sakila;SHOW FULL TABLES;"
+HERE
+
+ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$MASTER_IP" << HERE
+    set -x 
+    source /etc/profile.d/mysqlc.sh
+    sudo /opt/mysqlcluster/home/mysqlc/bin/ndb_mgm -e show
+    sudo /opt/mysqlcluster/home/mysqlc/bin/ndb_mgm -e 'all status'
+    sudo /opt/mysqlcluster/home/mysqlc/bin/mysqld --defaults-file=/opt/mysqlcluster/deploy/conf/my.cnf --user=root &
+
+HERE
+
+ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$MASTER_IP" << HERE
+    set -x 
+    source /etc/profile.d/mysqlc.sh
+    wget -q https://downloads.mysql.com/docs/sakila-db.tar.gz
+    tar -xzf sakila-db.tar.gz
+    sudo /opt/mysqlcluster/home/mysqlc/bin/mysql -e "SOURCE /home/ubuntu/sakila-db/sakila-schema.sql;SOURCE /home/ubuntu/sakila-db/sakila-data.sql;USE sakila;SHOW FULL TABLES;"
+HERE
+
 # sudo /opt/mysqlcluster/home/mysqlc/bin/ndb_mgm -e show
-# sudo /opt/mysqlcluster/home/mysqlc/bin/mysqld --defaults-file=/opt/mysqlcluster/deploy/conf/my.cnf --user=root
+# sudo /opt/mysqlcluster/home/mysqlc/bin/ndb_mgm -e 'all status'
+# sudo /opt/mysqlcluster/home/mysqlc/bin/mysqld --defaults-file=/opt/mysqlcluster/deploy/conf/my.cnf --user=root &
+
+# echo "export MYSQLC_HOME=/opt/mysqlcluster/home/mysqlc" > /etc/profile.d/mysqlc.sh
+# echo "export PATH=$MYSQLC_HOME/bin:$PATH" >> /etc/profile.d/mysqlc.sh
+# source /etc/profile.d/mysqlc.sh
+
+
+# SAKILA 
+# wget https://downloads.mysql.com/docs/sakila-db.tar.gz
+# tar -xzf sakila-db.tar.gz
+# mysql -h 127.0.0.1 -u root
+# SOURCE /home/ubuntu/sakila-db/sakila-schema.sql;
+# SOURCE /home/ubuntu/sakila-db/sakila-data.sql;
+# USE sakila;
+# SHOW FULL TABLES;
