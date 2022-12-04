@@ -1,11 +1,15 @@
 import pymysql.cursors
 import argparse
+import random
+#import pyping
 
-def create_connection(IP):
+
+def create_connection(IP,bindAddress=None):
     """Create connection with MySQL database
 
     Args:
         IP (str): instance IP to connect to
+        bindAddress (str) : IP address of bound slave node
 
     Returns:
         connection: connection to instance's database
@@ -14,7 +18,9 @@ def create_connection(IP):
                              user='test',
                              password='pass',
                              database='sakila',
-                             cursorclass=pymysql.cursors.DictCursor)
+                             cursorclass=pymysql.cursors.DictCursor,
+                             bind_address=bindAddress
+                             )
 
     return connection
 
@@ -50,25 +56,28 @@ with open("env_variables.txt", 'r') as file:
     slave1IP = lines[3][10:].replace("\n","")
     slave2IP = lines[4][10:].replace("\n","")
 
+slaveList = [slave0IP, slave1IP, slave2IP]
+
 # Connect to the database
+connectionType = "r"
 
+if connectionType == "r":
+    if queryType == "SELECT":
+        connection = create_connection(masterIP, slaveList[random.randrange(3)])
 
-if queryType == "SELECT":
-    connection = create_connection(masterIP)
-
-    # Test connection with sakila database with a select query
-    with connection:
-        with connection.cursor() as cursor:
-            # Read a single record
-            cursor.execute(sql)
-            result = cursor.fetchall()
-            print(result)
-elif queryType == "INSERT":
-    connection = create_connection(masterIP)
-    with connection:
-        with connection.cursor() as cursor:
-            # Read a single record
-            cursor.execute(sql)
-            result = cursor.fetchall()
-            print(result)
-        connection.commit()
+        # Test connection with sakila database with a select query
+        with connection:
+            with connection.cursor() as cursor:
+                # Read a single record
+                cursor.execute(sql)
+                result = cursor.fetchall()
+                print(result)
+    elif queryType == "INSERT":
+        connection = create_connection(masterIP)
+        with connection:
+            with connection.cursor() as cursor:
+                # Read a single record
+                cursor.execute(sql)
+                result = cursor.fetchall()
+                print(result)
+            connection.commit()
