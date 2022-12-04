@@ -72,6 +72,8 @@ echo "[mysqld]
 ndbcluster
 datadir=/opt/mysqlcluster/deploy/mysqld_data
 basedir=/opt/mysqlcluster/home/mysqlc
+bind-address=0.0.0.0
+#bind-address=127.0.0.1
 port=3306" > my.cnf
 sudo mv my.cnf /opt/mysqlcluster/deploy/conf/my.cnf
 echo "[ndb_mgmd]
