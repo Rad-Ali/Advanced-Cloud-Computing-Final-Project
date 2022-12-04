@@ -147,15 +147,15 @@ ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$MASTER_IP" << 
     wget -q https://downloads.mysql.com/docs/sakila-db.tar.gz
     tar -xzf sakila-db.tar.gz
     sudo /opt/mysqlcluster/home/mysqlc/bin/mysql -e "SOURCE /home/ubuntu/sakila-db/sakila-schema.sql;SOURCE /home/ubuntu/sakila-db/sakila-data.sql;USE sakila;SHOW FULL TABLES;"
+    sudo /opt/mysqlcluster/home/mysqlc/bin/mysql -e "CREATE USER 'test'@'localhost' IDENTIFIED BY 'pass';GRANT ALL PRIVILEGES ON *.* TO 'test'@'localhost' WITH GRANT OPTION;
+    CREATE USER 'test'@'%' IDENTIFIED BY 'pass';GRANT ALL PRIVILEGES ON *.* TO 'test'@'%' WITH GRANT OPTION;"
 HERE
 
-# sudo /opt/mysqlcluster/home/mysqlc/bin/ndb_mgm -e show
-# sudo /opt/mysqlcluster/home/mysqlc/bin/ndb_mgm -e 'all status'
-# sudo /opt/mysqlcluster/home/mysqlc/bin/mysqld --defaults-file=/opt/mysqlcluster/deploy/conf/my.cnf --user=root &
-
-# echo "export MYSQLC_HOME=/opt/mysqlcluster/home/mysqlc" > /etc/profile.d/mysqlc.sh
-# echo "export PATH=$MYSQLC_HOME/bin:$PATH" >> /etc/profile.d/mysqlc.sh
-# source /etc/profile.d/mysqlc.sh
+# mysql user stuff
+# CREATE USER 'test'@'localhost' IDENTIFIED BY 'pass';
+# GRANT ALL PRIVILEGES ON *.* TO 'test'@'localhost' WITH GRANT OPTION;
+# CREATE USER 'test'@'%' IDENTIFIED BY 'pass';
+# GRANT ALL PRIVILEGES ON *.* TO 'test'@'%' WITH GRANT OPTION;
 
 
 # SAKILA 
