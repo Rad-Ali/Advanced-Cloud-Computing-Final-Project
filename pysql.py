@@ -1,6 +1,24 @@
 import pymysql.cursors
 import argparse
 
+def create_connection(IP):
+    """Create connection with MySQL database
+
+    Args:
+        IP (str): instance IP to connect to
+
+    Returns:
+        connection: connection to instance's database
+    """
+    connection = pymysql.connect(host=IP,
+                             user='test',
+                             password='pass',
+                             database='sakila',
+                             cursorclass=pymysql.cursors.DictCursor)
+
+    return connection
+
+
 #Parse query arguments
 parser = argparse.ArgumentParser(description='Instance setup.')
 parser.add_argument('--query', help='Run query')
@@ -33,16 +51,24 @@ with open("env_variables.txt", 'r') as file:
     slave2IP = lines[4][10:].replace("\n","")
 
 # Connect to the database
-connection = pymysql.connect(host=masterIP,
-                             user='test',
-                             password='pass',
-                             database='sakila',
-                             cursorclass=pymysql.cursors.DictCursor)
 
-# Test connection with sakila database with a select query
-with connection:
-    with connection.cursor() as cursor:
-        # Read a single record
-        cursor.execute(sql)
-        result = cursor.fetchall()
-        print(result)
+
+if queryType == "SELECT":
+    connection = create_connection(masterIP)
+
+    # Test connection with sakila database with a select query
+    with connection:
+        with connection.cursor() as cursor:
+            # Read a single record
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            print(result)
+elif queryType == "INSERT":
+    connection = create_connection(masterIP)
+    with connection:
+        with connection.cursor() as cursor:
+            # Read a single record
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            print(result)
+        connection.commit()
