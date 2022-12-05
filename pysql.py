@@ -70,9 +70,9 @@ slave2IP = ""
 with open("env_variables.txt", 'r') as file:
     lines = file.readlines()
     masterIP = lines[1][lines[1].find('=')+1:].replace("\n","")
-    slave0IP = lines[7][lines[7].find('=')+1:].replace("\n","")
-    slave1IP = lines[8][lines[8].find('=')+1:].replace("\n","")
-    slave2IP = lines[9][lines[9].find('=')+1:].replace("\n","")
+    slave0IP = lines[2][lines[2].find('=')+1:].replace("\n","")
+    slave1IP = lines[3][lines[3].find('=')+1:].replace("\n","")
+    slave2IP = lines[4][lines[4].find('=')+1:].replace("\n","")
 
 slaveList = [slave0IP, slave1IP, slave2IP]
 
@@ -83,7 +83,7 @@ if args.customized :                                         # Customized
     slave1Time = read_ping("slave1.txt")
     slave2Time = read_ping("slave2.txt")
     bindAddress = slave0IP
-    if slave1Time <  slave0IP: bindAddress = slave1IP
+    if slave1Time <  slave0Time: bindAddress = slave1IP
     if slave2Time < slave1Time or slave2Time < slave0Time: bindAddress = slave2IP
 
 
