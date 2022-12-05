@@ -168,6 +168,8 @@ def start_instance():
     for i in range(NUM_SLAVES):
         slave.append(create_ec2('t2.micro', sg_id, key_name, "slave "+str(i)))
 
+    proxy = create_ec2('t2.large', sg_id, key_name, "proxy")
+
     print(f'Waiting for standalone {standalone.id} to be running...')
     standalone.wait_until_running()
 
@@ -178,9 +180,12 @@ def start_instance():
         print(f'Waiting for slave {i} {slave[i].id} to be running...')
         slave[i].wait_until_running()
 
+    print(f'Waiting for proxy {proxy.id} to be running...')
+    proxy.wait_until_running()
+
     # Get the instance's IP
-    instance_ips = retrieve_public_ip([standalone.id, master.id, slave[0].id, slave[1].id, slave[2].id])
-    intances_dns = retrieve_private_dns([master.id, slave[0].id, slave[1].id, slave[2].id])
+    instance_ips = retrieve_public_ip([standalone.id, master.id, slave[0].id, slave[1].id, slave[2].id, proxy.id])
+    intances_dns = retrieve_private_dns([master.id, slave[0].id, slave[1].id, slave[2].id, proxy.id])
 
     with open('env_variables.txt', 'w+') as f:
         f.write(f'STANDALONE_IP={instance_ips[0]}\n')
@@ -188,16 +193,20 @@ def start_instance():
         f.write(f'SLAVE0_IP={instance_ips[2]}\n')
         f.write(f'SLAVE1_IP={instance_ips[3]}\n')
         f.write(f'SLAVE2_IP={instance_ips[4]}\n')
+        f.write(f'PROXY_IP={instance_ips[5]}\n')
         f.write(f'MASTER_DNS={intances_dns[0]}\n')
         f.write(f'SLAVE0_DNS={intances_dns[1]}\n')
         f.write(f'SLAVE1_DNS={intances_dns[2]}\n')
         f.write(f'SLAVE2_DNS={intances_dns[3]}\n')
+        f.write(f'PROXY_DNS={intances_dns[4]}\n')
         f.write(f'PRIVATE_KEY_FILE={private_key_filename}\n')
     print('Wrote instance\'s IP and private key filename to env_variables.txt')
     print(f'Standalone {standalone.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ips[0]}\'')
     print(f'Master {master.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ips[1]}\'')
     for i in range(NUM_SLAVES):
         print(f'Slave {i} - {master.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ips[i+2]}\'')
+    print(f'Proxy {proxy.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ips[5]}\'')
+    
 
 
 def terminate_all_running_instances():
