@@ -19,7 +19,7 @@ def create_connection(IP,bindAddress=None):
                              password='pass',
                              database='sakila',
                              cursorclass=pymysql.cursors.DictCursor,
-                             bind_address=bindAddress
+                             #bind_address=bindAddress
                              )
 
     return connection
@@ -60,10 +60,10 @@ slaveList = [slave0IP, slave1IP, slave2IP]
 
 # Connect to the database
 connectionType = "r"
-
+slaveList[random.randrange(3)]
 if connectionType == "r":
     if queryType == "SELECT":
-        connection = create_connection(masterIP, slaveList[random.randrange(3)])
+        connection = create_connection(masterIP)
 
         # Test connection with sakila database with a select query
         with connection:
