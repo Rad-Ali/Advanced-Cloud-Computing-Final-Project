@@ -1,7 +1,6 @@
 import pymysql.cursors
 import argparse
 import random
-#import pyping
 
 
 def create_connection(IP,bindAddress=None):
@@ -24,12 +23,32 @@ def create_connection(IP,bindAddress=None):
 
     return connection
 
+def read_ping(filename):
+    """Read the ping value of slave from textfile
+
+    Args:
+        filename (str): filename of slave textfile
+
+    Returns:
+        (float): ping time value
+    """
+    with open(filename, 'r') as file:
+        line=file.readline()
+        temp = line[line.find('=')+2:]
+        temp = temp[:temp.find('/')]
+        print(temp)
+        return float(temp)
+        
+
 
 #Parse query arguments
 parser = argparse.ArgumentParser(description='Instance setup.')
 parser.add_argument('--query', help='Run query')
+group = parser.add_mutually_exclusive_group()
+group.add_argument('-r', '--random', action='store_true', default=False)
+group.add_argument('-c', '--customized', action='store_true', default=False)
 args = parser.parse_args()
-
+print(args)
 #Verify what type of operation is being requested 
 sql = ""
 queryType = ""
@@ -58,26 +77,35 @@ with open("env_variables.txt", 'r') as file:
 
 slaveList = [slave0IP, slave1IP, slave2IP]
 
-# Connect to the database
-connectionType = "r"
-slaveList[random.randrange(3)]
-if connectionType == "r":
-    if queryType == "SELECT":
-        connection = create_connection(masterIP)
+bindAddress = None                                           # Direct hit
+if args.random: bindAddress = slaveList[random.randrange(3)] # Random
+if args.customized :                                         # Customized
+    slave0Time = read_ping("slave0.txt")
+    slave1Time = read_ping("slave1.txt")
+    slave2Time = read_ping("slave2.txt")
+    bindAddress = slave0IP
+    if slave1Time <  slave0IP: bindAddress = slave1IP
+    if slave2Time < slave1Time or slave2Time < slave0Time: bindAddress = slave2IP
 
-        # Test connection with sakila database with a select query
-        with connection:
-            with connection.cursor() as cursor:
-                # Read a single record
-                cursor.execute(sql)
-                result = cursor.fetchall()
-                print(result)
-    elif queryType == "INSERT":
-        connection = create_connection(masterIP)
-        with connection:
-            with connection.cursor() as cursor:
-                # Read a single record
-                cursor.execute(sql)
-                result = cursor.fetchall()
-                print(result)
-            connection.commit()
+print(bindAddress)
+
+# Connect to the database with respect to query type
+if queryType == "SELECT":
+    connection = create_connection(masterIP)
+
+    # Test connection with sakila database with a select query
+    with connection:
+        with connection.cursor() as cursor:
+            # Read a single record
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            print(result)
+elif queryType == "INSERT":
+    connection = create_connection(masterIP)
+    with connection:
+        with connection.cursor() as cursor:
+            # Read a single record
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            print(result)
+        connection.commit()
