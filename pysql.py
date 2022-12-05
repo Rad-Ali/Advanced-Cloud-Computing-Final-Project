@@ -2,7 +2,6 @@ import pymysql.cursors
 import argparse
 import random
 
-
 def create_connection(IP,bindAddress=None):
     """Create connection with MySQL database
 
@@ -18,7 +17,7 @@ def create_connection(IP,bindAddress=None):
                              password='pass',
                              database='sakila',
                              cursorclass=pymysql.cursors.DictCursor,
-                             #bind_address=bindAddress
+                             bind_address=bindAddress
                              )
 
     return connection
@@ -87,11 +86,10 @@ if args.customized :                                         # Customized
     if slave1Time <  slave0IP: bindAddress = slave1IP
     if slave2Time < slave1Time or slave2Time < slave0Time: bindAddress = slave2IP
 
-print(bindAddress)
 
 # Connect to the database with respect to query type
 if queryType == "SELECT":
-    connection = create_connection(masterIP)
+    connection = create_connection(masterIP,bindAddress)
 
     # Test connection with sakila database with a select query
     with connection:
