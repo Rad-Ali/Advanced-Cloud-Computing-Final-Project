@@ -22,16 +22,18 @@ activate_venv && python instance_setup.py
 
 
 source env_variables.txt
-echo "STANDALONE_IP=$STANDALONE_IP"
-echo "MASTER_IP=$MASTER_IP"
-echo "SLAVE0_IP=$SLAVE0_IP"
-echo "SLAVE1_IP=$SLAVE1_IP"
-echo "SLAVE2_IP=$SLAVE2_IP"
-echo "MASTER_DNS=$MASTER_DNS"
-echo "SLAVE0_DNS=$SLAVE0_DNS"
-echo "SLAVE1_DNS=$SLAVE1_DNS"
-echo "SLAVE2_DNS=$SLAVE2_DNS"
-echo "PRIVATE_KEY_FILE=$PRIVATE_KEY_FILE"
+# echo "STANDALONE_IP=$STANDALONE_IP"
+# echo "MASTER_IP=$MASTER_IP"
+# echo "SLAVE0_IP=$SLAVE0_IP"
+# echo "SLAVE1_IP=$SLAVE1_IP"
+# echo "SLAVE2_IP=$SLAVE2_IP"
+# echo "PROXY_IP=$PROXY_IP"
+# echo "MASTER_DNS=$MASTER_DNS"
+# echo "SLAVE0_DNS=$SLAVE0_DNS"
+# echo "SLAVE1_DNS=$SLAVE1_DNS"
+# echo "SLAVE2_DNS=$SLAVE2_DNS"
+# echo "PROXY_DNS=$PROXY_DNS"
+# echo "PRIVATE_KEY_FILE=$PRIVATE_KEY_FILE"
 chmod 600 "$PRIVATE_KEY_FILE"
 
 # Even though we wait for the instance to be running in python, openssh takes some time to start.
@@ -109,48 +111,65 @@ slaves=($SLAVE0_IP $SLAVE1_IP $SLAVE2_IP)
 
 for ip in ${slaves[@]}; do
     ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$ip" << HERE
-        set -x 
-        sudo mkdir -p /opt/mysqlcluster/home
-        cd /opt/mysqlcluster/home
-        sudo wget -q http://dev.mysql.com/get/Downloads/MySQL-Cluster-7.2/mysql-cluster-gpl-7.2.1-linux2.6-x86_64.tar.gz
-        sudo tar xf mysql-cluster-gpl-7.2.1-linux2.6-x86_64.tar.gz
-        sudo ln -s mysql-cluster-gpl-7.2.1-linux2.6-x86_64 mysqlc
-        cd ~
-        echo "export MYSQLC_HOME=/opt/mysqlcluster/home/mysqlc
-        export PATH=/opt/mysqlcluster/home/mysqlc/bin:\$PATH" > mysqlc.sh
-        sudo mv mysqlc.sh /etc/profile.d/mysqlc.sh
-        source /etc/profile.d/mysqlc.sh
-        sudo apt-get -qq update && sudo apt-get -qq install -y libncurses5
-        sudo mkdir -p /opt/mysqlcluster/deploy/ndb_data
-        sudo /opt/mysqlcluster/home/mysqlc/bin/ndbd -c "$MASTER_DNS"
+    set -x 
+    sudo mkdir -p /opt/mysqlcluster/home
+    cd /opt/mysqlcluster/home
+    sudo wget -q http://dev.mysql.com/get/Downloads/MySQL-Cluster-7.2/mysql-cluster-gpl-7.2.1-linux2.6-x86_64.tar.gz
+    sudo tar xf mysql-cluster-gpl-7.2.1-linux2.6-x86_64.tar.gz
+    sudo ln -s mysql-cluster-gpl-7.2.1-linux2.6-x86_64 mysqlc
+    cd ~
+    echo "export MYSQLC_HOME=/opt/mysqlcluster/home/mysqlc
+    export PATH=/opt/mysqlcluster/home/mysqlc/bin:\$PATH" > mysqlc.sh
+    sudo mv mysqlc.sh /etc/profile.d/mysqlc.sh
+    source /etc/profile.d/mysqlc.sh
+    sudo apt-get -qq update && sudo apt-get -qq install -y libncurses5
+    sudo mkdir -p /opt/mysqlcluster/deploy/ndb_data
+    sudo /opt/mysqlcluster/home/mysqlc/bin/ndbd -c "$MASTER_DNS"
 HERE
 done
 
 ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$STANDALONE_IP" << HERE
-    set -x 
-    sudo apt-get -qq update -y && sudo apt-get -qq install -y mysql-server
-    wget -q https://downloads.mysql.com/docs/sakila-db.tar.gz
-    tar -xzf sakila-db.tar.gz
-    sudo mysql -e "SOURCE /home/ubuntu/sakila-db/sakila-schema.sql;SOURCE /home/ubuntu/sakila-db/sakila-data.sql;USE sakila;SHOW FULL TABLES;"
-    sudo mysql -e "CREATE USER 'test'@'localhost' IDENTIFIED BY 'pass';GRANT ALL PRIVILEGES ON *.* TO 'test'@'localhost' WITH GRANT OPTION;
-    CREATE USER 'test'@'%' IDENTIFIED BY 'pass';GRANT ALL PRIVILEGES ON *.* TO 'test'@'%' WITH GRANT OPTION;"
+set -x 
+sudo apt-get -qq update -y && sudo apt-get -qq install -y mysql-server
+wget -q https://downloads.mysql.com/docs/sakila-db.tar.gz
+tar -xzf sakila-db.tar.gz
+sudo mysql -e "SOURCE /home/ubuntu/sakila-db/sakila-schema.sql;SOURCE /home/ubuntu/sakila-db/sakila-data.sql;USE sakila;SHOW FULL TABLES;"
+sudo mysql -e "CREATE USER 'test'@'localhost' IDENTIFIED BY 'pass';GRANT ALL PRIVILEGES ON *.* TO 'test'@'localhost' WITH GRANT OPTION;
+CREATE USER 'test'@'%' IDENTIFIED BY 'pass';GRANT ALL PRIVILEGES ON *.* TO 'test'@'%' WITH GRANT OPTION;"
 HERE
 
 ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$MASTER_IP" << HERE
-    set -x 
-    source /etc/profile.d/mysqlc.sh
-    sudo /opt/mysqlcluster/home/mysqlc/bin/ndb_mgm -e show
-    sudo /opt/mysqlcluster/home/mysqlc/bin/ndb_mgm -e 'all status'
-    sudo /opt/mysqlcluster/home/mysqlc/bin/mysqld --defaults-file=/opt/mysqlcluster/deploy/conf/my.cnf --user=root &
+set -x 
+source /etc/profile.d/mysqlc.sh
+sudo /opt/mysqlcluster/home/mysqlc/bin/ndb_mgm -e show
+sudo /opt/mysqlcluster/home/mysqlc/bin/ndb_mgm -e 'all status'
+sudo /opt/mysqlcluster/home/mysqlc/bin/mysqld --defaults-file=/opt/mysqlcluster/deploy/conf/my.cnf --user=root &
 HERE
 
 ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$MASTER_IP" << HERE
-    set -x 
-    source /etc/profile.d/mysqlc.sh
-    wget -q https://downloads.mysql.com/docs/sakila-db.tar.gz
-    tar -xzf sakila-db.tar.gz
-    sudo /opt/mysqlcluster/home/mysqlc/bin/mysql -e "SOURCE /home/ubuntu/sakila-db/sakila-schema.sql;SOURCE /home/ubuntu/sakila-db/sakila-data.sql;USE sakila;SHOW FULL TABLES;"
-    sudo /opt/mysqlcluster/home/mysqlc/bin/mysql -e "CREATE USER 'test'@'localhost' IDENTIFIED BY 'pass';GRANT ALL PRIVILEGES ON *.* TO 'test'@'localhost' WITH GRANT OPTION;
-    CREATE USER 'test'@'%' IDENTIFIED BY 'pass';GRANT ALL PRIVILEGES ON *.* TO 'test'@'%' WITH GRANT OPTION;"
+set -x 
+source /etc/profile.d/mysqlc.sh
+wget -q https://downloads.mysql.com/docs/sakila-db.tar.gz
+tar -xzf sakila-db.tar.gz
+sudo /opt/mysqlcluster/home/mysqlc/bin/mysql -e "SOURCE /home/ubuntu/sakila-db/sakila-schema.sql;SOURCE /home/ubuntu/sakila-db/sakila-data.sql;USE sakila;SHOW FULL TABLES;"
+sudo /opt/mysqlcluster/home/mysqlc/bin/mysql -e "CREATE USER 'test'@'localhost' IDENTIFIED BY 'pass';GRANT ALL PRIVILEGES ON *.* TO 'test'@'localhost' WITH GRANT OPTION;
+CREATE USER 'test'@'%' IDENTIFIED BY 'pass';GRANT ALL PRIVILEGES ON *.* TO 'test'@'%' WITH GRANT OPTION;"
 HERE
 
+ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$PROXY_IP" << HERE
+set -x 
+git clone https://github.com/Rad-Ali/Advanced-Cloud-Computing-Final-Project.git
+sudo apt-get -qq update && sudo apt-get install -qq -y python3-pip
+sudo pip install pymysql
+echo "STANDALONE_IP=$STANDALONE_IP
+MASTER_IP=$MASTER_IP
+SLAVE0_IP=$SLAVE0_IP
+SLAVE1_IP=$SLAVE1_IP
+SLAVE2_IP=$SLAVE2_IP
+PROXY_IP=$PROXY_IP
+MASTER_DNS=$MASTER_DNS
+SLAVE0_DNS=$SLAVE0_DNS
+SLAVE1_DNS=$SLAVE1_DNS
+SLAVE2_DNS=$SLAVE2_DNS
+PROXY_DNS=$PROXY_DNS" > Advanced-Cloud-Computing-Final-Project/env_variables.txt
+HERE
