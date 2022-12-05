@@ -6,5 +6,5 @@ source ./env_variables.txt
 
 ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$PROXY_IP" << HERE
 cd Advanced-Cloud-Computing-Final-Project/
-python3 pysql.py --query "$1"
+python3 pysql.py --query "$1" $2
 HERE
