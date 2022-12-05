@@ -172,4 +172,7 @@ SLAVE0_DNS=$SLAVE0_DNS
 SLAVE1_DNS=$SLAVE1_DNS
 SLAVE2_DNS=$SLAVE2_DNS
 PROXY_DNS=$PROXY_DNS" > Advanced-Cloud-Computing-Final-Project/env_variables.txt
+ping $SLAVE0_IP -c 1 | tail -n1  > Advanced-Cloud-Computing-Final-Project/slave0.txt
+ping $SLAVE1_IP -c 1 | tail -n1  > Advanced-Cloud-Computing-Final-Project/slave1.txt
+ping $SLAVE2_IP -c 1 | tail -n1  > Advanced-Cloud-Computing-Final-Project/slave2.txt
 HERE
