@@ -69,10 +69,10 @@ slave2IP = ""
 # Read IPs from environment variables file
 with open("env_variables.txt", 'r') as file:
     lines = file.readlines()
-    masterIP = lines[1][10:].replace("\n","")
-    slave0IP = lines[2][10:].replace("\n","")
-    slave1IP = lines[3][10:].replace("\n","")
-    slave2IP = lines[4][10:].replace("\n","")
+    masterIP = lines[1][lines[1].find('=')+1:].replace("\n","")
+    slave0IP = lines[7][lines[7].find('=')+1:].replace("\n","")
+    slave1IP = lines[8][lines[8].find('=')+1:].replace("\n","")
+    slave2IP = lines[9][lines[9].find('=')+1:].replace("\n","")
 
 slaveList = [slave0IP, slave1IP, slave2IP]
 
