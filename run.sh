@@ -51,7 +51,7 @@ while [[ $SSH_IS_NOT_RUNNING -eq 1 ]]; do
     fi
 done
 
-ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$MASTER_IP" << HERE
+ssh -o "StrictHostKeyChecking no" -i "./$PRIVATE_KEY_FILE" ubuntu@"$MASTER_IP" << HERE
 set -x 
 sudo mkdir -p /opt/mysqlcluster/home
 cd /opt/mysqlcluster/home
@@ -176,3 +176,5 @@ ping $SLAVE0_IP -c 1 | tail -n1  > Advanced-Cloud-Computing-Final-Project/slave0
 ping $SLAVE1_IP -c 1 | tail -n1  > Advanced-Cloud-Computing-Final-Project/slave1.txt
 ping $SLAVE2_IP -c 1 | tail -n1  > Advanced-Cloud-Computing-Final-Project/slave2.txt
 HERE
+
+scp -i "./$PRIVATE_KEY_FILE" $PRIVATE_KEY_FILE ubuntu@$PROXY_IP:~/Advanced-Cloud-Computing-Final-Project
