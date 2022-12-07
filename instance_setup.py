@@ -95,7 +95,7 @@ def create_private_key_filename(key_name):
     Returns:
         str: Private key filename
     """
-    return f'./private_key_{key_name}.pem'
+    return f'private_key_{key_name}.pem'
 
 
 def create_key_pair(key_name, private_key_filename):
