@@ -110,7 +110,7 @@ HERE
 slaves=($SLAVE0_IP $SLAVE1_IP $SLAVE2_IP)
 
 for ip in ${slaves[@]}; do
-    ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$ip" << HERE
+    ssh -o "StrictHostKeyChecking no" -i "./$PRIVATE_KEY_FILE" ubuntu@"$ip" << HERE
     set -x 
     sudo mkdir -p /opt/mysqlcluster/home
     cd /opt/mysqlcluster/home
@@ -128,7 +128,7 @@ for ip in ${slaves[@]}; do
 HERE
 done
 
-ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$STANDALONE_IP" << HERE
+ssh -o "StrictHostKeyChecking no" -i "./$PRIVATE_KEY_FILE" ubuntu@"$STANDALONE_IP" << HERE
 set -x 
 sudo apt-get -qq update -y && sudo apt-get -qq install -y mysql-server
 wget -q https://downloads.mysql.com/docs/sakila-db.tar.gz
@@ -138,7 +138,7 @@ sudo mysql -e "CREATE USER 'test'@'localhost' IDENTIFIED BY 'pass';GRANT ALL PRI
 CREATE USER 'test'@'%' IDENTIFIED BY 'pass';GRANT ALL PRIVILEGES ON *.* TO 'test'@'%' WITH GRANT OPTION;"
 HERE
 
-ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$MASTER_IP" << HERE
+ssh -o "StrictHostKeyChecking no" -i "./$PRIVATE_KEY_FILE" ubuntu@"$MASTER_IP" << HERE
 set -x 
 source /etc/profile.d/mysqlc.sh
 sudo /opt/mysqlcluster/home/mysqlc/bin/ndb_mgm -e show
@@ -146,7 +146,7 @@ sudo /opt/mysqlcluster/home/mysqlc/bin/ndb_mgm -e 'all status'
 sudo /opt/mysqlcluster/home/mysqlc/bin/mysqld --defaults-file=/opt/mysqlcluster/deploy/conf/my.cnf --user=root &
 HERE
 
-ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$MASTER_IP" << HERE
+ssh -o "StrictHostKeyChecking no" -i "./$PRIVATE_KEY_FILE" ubuntu@"$MASTER_IP" << HERE
 set -x 
 source /etc/profile.d/mysqlc.sh
 wget -q https://downloads.mysql.com/docs/sakila-db.tar.gz
@@ -156,11 +156,12 @@ sudo /opt/mysqlcluster/home/mysqlc/bin/mysql -e "CREATE USER 'test'@'localhost' 
 CREATE USER 'test'@'%' IDENTIFIED BY 'pass';GRANT ALL PRIVILEGES ON *.* TO 'test'@'%' WITH GRANT OPTION;"
 HERE
 
-ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$PROXY_IP" << HERE
+ssh -o "StrictHostKeyChecking no" -i "./$PRIVATE_KEY_FILE" ubuntu@"$PROXY_IP" << HERE
 set -x 
 git clone https://github.com/Rad-Ali/Advanced-Cloud-Computing-Final-Project.git
 sudo apt-get -qq update && sudo apt-get install -qq -y python3-pip
 sudo pip install pymysql
+sudo pip install sshtunnel
 echo "STANDALONE_IP=$STANDALONE_IP
 MASTER_IP=$MASTER_IP
 SLAVE0_IP=$SLAVE0_IP
