@@ -20,20 +20,8 @@ activate_venv && pip3 install -r requirements.txt
 
 activate_venv && python instance_setup.py
 
-
+# Import all the necessary IP and DNS addresses
 source env_variables.txt
-# echo "STANDALONE_IP=$STANDALONE_IP"
-# echo "MASTER_IP=$MASTER_IP"
-# echo "SLAVE0_IP=$SLAVE0_IP"
-# echo "SLAVE1_IP=$SLAVE1_IP"
-# echo "SLAVE2_IP=$SLAVE2_IP"
-# echo "PROXY_IP=$PROXY_IP"
-# echo "MASTER_DNS=$MASTER_DNS"
-# echo "SLAVE0_DNS=$SLAVE0_DNS"
-# echo "SLAVE1_DNS=$SLAVE1_DNS"
-# echo "SLAVE2_DNS=$SLAVE2_DNS"
-# echo "PROXY_DNS=$PROXY_DNS"
-# echo "PRIVATE_KEY_FILE=$PRIVATE_KEY_FILE"
 chmod 600 "$PRIVATE_KEY_FILE"
 
 # Even though we wait for the instance to be running in python, openssh takes some time to start.
@@ -51,6 +39,10 @@ while [[ $SSH_IS_NOT_RUNNING -eq 1 ]]; do
     fi
 done
 
+# What is done here :
+#    - Download and install the MYSQL Cluster to the master instance
+#    - Set up environment variables
+#    - Set up the config files
 ssh -o "StrictHostKeyChecking no" -i "./$PRIVATE_KEY_FILE" ubuntu@"$MASTER_IP" << HERE
 set -x 
 sudo mkdir -p /opt/mysqlcluster/home
@@ -109,6 +101,11 @@ HERE
 
 slaves=($SLAVE0_IP $SLAVE1_IP $SLAVE2_IP)
 
+# What is done here :
+#    - Download and install the MYSQL Cluster to the slave instances
+#    - Set up environment variables
+#    - Set up the config files
+#    - Start node
 for ip in ${slaves[@]}; do
     ssh -o "StrictHostKeyChecking no" -i "./$PRIVATE_KEY_FILE" ubuntu@"$ip" << HERE
     set -x 
@@ -128,6 +125,10 @@ for ip in ${slaves[@]}; do
 HERE
 done
 
+# What is done here :
+#    - Download and install the MYSQL to the standalone instance
+#    - Download and source sakila database
+#    - Create mysql user with all privileges
 ssh -o "StrictHostKeyChecking no" -i "./$PRIVATE_KEY_FILE" ubuntu@"$STANDALONE_IP" << HERE
 set -x 
 sudo apt-get -qq update -y && sudo apt-get -qq install -y mysql-server
@@ -138,6 +139,9 @@ sudo mysql -e "CREATE USER 'test'@'localhost' IDENTIFIED BY 'pass';GRANT ALL PRI
 CREATE USER 'test'@'%' IDENTIFIED BY 'pass';GRANT ALL PRIVILEGES ON *.* TO 'test'@'%' WITH GRANT OPTION;"
 HERE
 
+# What is done here :
+#    - Show connected cluster
+#    - Start cluster 
 ssh -o "StrictHostKeyChecking no" -i "./$PRIVATE_KEY_FILE" ubuntu@"$MASTER_IP" << HERE
 set -x 
 source /etc/profile.d/mysqlc.sh
@@ -146,6 +150,10 @@ sudo /opt/mysqlcluster/home/mysqlc/bin/ndb_mgm -e 'all status'
 sudo /opt/mysqlcluster/home/mysqlc/bin/mysqld --defaults-file=/opt/mysqlcluster/deploy/conf/my.cnf --user=root &
 HERE
 
+# What is done here :
+#    - Download and source sakila database
+#    - Create mysql user with all privileges
+#    - Start node
 ssh -o "StrictHostKeyChecking no" -i "./$PRIVATE_KEY_FILE" ubuntu@"$MASTER_IP" << HERE
 set -x 
 source /etc/profile.d/mysqlc.sh
@@ -156,6 +164,11 @@ sudo /opt/mysqlcluster/home/mysqlc/bin/mysql -e "CREATE USER 'test'@'localhost' 
 CREATE USER 'test'@'%' IDENTIFIED BY 'pass';GRANT ALL PRIVILEGES ON *.* TO 'test'@'%' WITH GRANT OPTION;"
 HERE
 
+# What is done here :
+#    - Clone my public repo that contains the proxy python script 
+#    - Install the required libraries
+#    - Create environment variables text file
+#    - Ping all slave instances and store values in text file
 ssh -o "StrictHostKeyChecking no" -i "./$PRIVATE_KEY_FILE" ubuntu@"$PROXY_IP" << HERE
 set -x 
 git clone https://github.com/Rad-Ali/Advanced-Cloud-Computing-Final-Project.git
@@ -178,4 +191,5 @@ ping $SLAVE1_IP -c 1 | tail -n1  > Advanced-Cloud-Computing-Final-Project/slave1
 ping $SLAVE2_IP -c 1 | tail -n1  > Advanced-Cloud-Computing-Final-Project/slave2.txt
 HERE
 
+#Copy the private key of all AWS instances to the proxy to allow sshtunnels
 scp -i "./$PRIVATE_KEY_FILE" $PRIVATE_KEY_FILE ubuntu@$PROXY_IP:~/Advanced-Cloud-Computing-Final-Project
